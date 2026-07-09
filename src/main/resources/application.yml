@@ -1,0 +1,34 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bank_cards
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    change-log: classpath:db/migration/changelog-master.yaml
+    enabled: true
+
+app:
+  jwt:
+    secret: "dGhpc0lzQU5vdGVyU2VjcmV0S2V5Rm9yQ2FyZEVuY3J5cHRpb24="
+    expiration-ms: 86400000
+  encryption:
+    secret: "5u8x/A?D(G+KbPeShVmYq3s6v9y$B&E)"
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
