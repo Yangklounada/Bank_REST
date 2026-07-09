@@ -1,52 +1,392 @@
-Система управления банковскими картами
+# 💳 Bank REST API
 
-REST API для управления банковскими картами, пользователями и переводами.
+![Java](https://img.shields.io/badge/Java-17-orange)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2-success)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6-green)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![JWT](https://img.shields.io/badge/Auth-JWT-red)
+![Liquibase](https://img.shields.io/badge/Database-Liquibase-yellow)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
 
-Технологии
+---
 
-Java 17, Spring Boot 3.2.0
-Spring Security + JWT аутентификация
-Spring Data JPA + PostgreSQL
-Liquibase миграции
-Swagger/OpenAPI документация
-AES/GCM шифрование номеров карт
-Быстрый старт
+# 📖 О проекте
 
-Запустить PostgreSQL: docker-compose up -d
-Собрать и запустить приложение: ./mvnw spring-boot:run
-Swagger UI: http://localhost:8080/swagger-ui.html
-API Endpoints
+**Bank REST API** — серверное приложение для управления банковскими картами и денежными переводами между ними.
 
-Auth (доступны без токена)
+Проект реализован на **Spring Boot** с использованием современной архитектуры REST API, JWT-аутентификации, разграничения ролей пользователей, шифрования конфиденциальных данных и миграций базы данных через Liquibase.
 
-POST /api/auth/register — регистрация нового пользователя POST /api/auth/login — вход, возвращает JWT токен
+Основной целью проекта является демонстрация построения безопасного банковского backend-приложения с использованием современных технологий Java.
 
-Cards (требуют JWT)
+---
 
-POST /api/cards — создать карту GET /api/cards?page=0&size=10 — список карт пользователя (с пагинацией) GET /api/cards/{id} — получить карту по ID PATCH /api/cards/{id}/block — заблокировать карту DELETE /api/cards/{id} — удалить карту
+# 🚀 Возможности
 
-Transfers (требуют JWT)
+## Пользователь
 
-POST /api/transfers — перевод между своими картами
+- регистрация
+- авторизация по JWT
+- просмотр своих карт
+- просмотр информации о карте
+- просмотр баланса
+- выполнение переводов между картами
+- просмотр истории операций
+- постраничный вывод данных
+- валидация всех входящих запросов
 
-Admin (требуют ROLE_ADMIN)
+---
 
-GET /api/admin/users — список всех пользователей GET /api/admin/users/{id} — пользователь по ID DELETE /api/admin/users/{id} — удалить пользователя PATCH /api/admin/users/{id}/role — назначить администратора
+## Администратор
 
-Безопасность
+Помимо возможностей пользователя:
 
-Для доступа к защищённым endpoint'ам требуется JWT токен. Передаётся в заголовке: Authorization: Bearer
+- создание банковских карт
+- блокировка карт
+- разблокировка карт
+- удаление карт
+- управление пользователями
+- просмотр информации обо всех картах
 
-Пример использования
+---
 
-Регистрация
+# 🔒 Безопасность
 
-curl -X POST http://localhost:8080/api/auth/register -H "Content-Type: application/json" -d '{"username":"ivan","email":"ivan@mail.ru","password":"123456"}'
+В проекте реализованы современные механизмы защиты.
 
-Создание карты
+### JWT Authentication
 
-curl -X POST http://localhost:8080/api/cards -H "Content-Type: application/json" -H "Authorization: Bearer " -d '{"cardNumber":"1234567890123456","cardHolder":"Ivan Ivanov","expiryDate":"2028-12-31","initialBalance":1000}'
+После успешной авторизации сервер выдает JWT-токен.
 
-Перевод
+Каждый защищенный запрос проходит через собственный JWT Filter.
 
-curl -X POST http://localhost:8080/api/transfers -H "Content-Type: application/json" -H "Authorization: Bearer " -d '{"fromCardId":1,"toCardId":2,"amount":100}'
+---
+
+### Spring Security
+
+Используется:
+
+- SecurityFilterChain
+- AuthenticationManager
+- PasswordEncoder (BCrypt)
+- Role-based authorization
+- Stateless Session Policy
+
+---
+
+### Шифрование банковских карт
+
+Номера банковских карт **не хранятся в открытом виде**.
+
+Используется
+
+- AES/GCM
+
+что обеспечивает:
+
+- конфиденциальность данных;
+- защиту от изменения;
+- безопасное хранение номеров карт.
+
+---
+
+# 🏛 Архитектура
+
+Проект построен по классической многослойной архитектуре.
+
+```
+                REST
+
+                 │
+
+          Controller Layer
+
+                 │
+
+           Service Layer
+
+                 │
+
+         Repository Layer
+
+                 │
+
+            PostgreSQL
+```
+
+Каждый слой отвечает только за свою область ответственности.
+
+---
+
+# 📂 Структура проекта
+
+```
+src
+│
+├── config
+│
+├── controller
+│
+├── dto
+│
+├── entity
+│
+├── exception
+│
+├── mapper
+│
+├── repository
+│
+├── security
+│
+├── service
+│
+├── util
+│
+└── validation
+```
+
+---
+
+# ⚙️ Используемые технологии
+
+## Backend
+
+- Java 17
+- Spring Boot 3
+- Spring MVC
+- Spring Security
+- Spring Data JPA
+- Hibernate
+
+---
+
+## База данных
+
+- PostgreSQL
+- Liquibase
+
+---
+
+## Документация
+
+- Swagger / OpenAPI
+
+---
+
+## Безопасность
+
+- JWT
+- BCrypt
+- AES/GCM Encryption
+
+---
+
+## Сборка
+
+- Maven
+
+---
+
+## Контейнеризация
+
+- Docker
+- Docker Compose
+
+---
+
+# 🗄 База данных
+
+Для управления схемой используется **Liquibase**.
+
+При запуске приложения автоматически выполняются миграции.
+
+Это обеспечивает:
+
+- создание таблиц;
+- создание ограничений;
+- создание индексов;
+- актуальную структуру БД.
+
+---
+
+# 📡 REST API
+
+Основные группы API.
+
+## Authentication
+
+```
+POST /auth/register
+
+POST /auth/login
+```
+
+---
+
+## Cards
+
+```
+GET
+
+POST
+
+PUT
+
+DELETE
+```
+
+Работа с банковскими картами.
+
+---
+
+## Transfers
+
+```
+POST /transfer
+```
+
+Выполнение денежных переводов между картами.
+
+---
+
+# 📑 Swagger
+
+После запуска проекта документация доступна по адресу
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+---
+
+# 🐳 Запуск через Docker
+
+```bash
+docker-compose up -d
+```
+
+После запуска автоматически поднимется PostgreSQL.
+
+---
+
+# ▶️ Локальный запуск
+
+### 1.
+
+Клонировать проект
+
+```bash
+git clone <repository>
+```
+
+### 2.
+
+Запустить PostgreSQL
+
+### 3.
+
+Создать БД
+
+```
+bank_cards
+```
+
+### 4.
+
+Настроить
+
+```
+application.yml
+```
+
+или
+
+```
+application.properties
+```
+
+### 5.
+
+Запустить
+
+```bash
+mvn spring-boot:run
+```
+
+или
+
+```bash
+./mvnw spring-boot:run
+```
+
+---
+
+# 🔄 Логика перевода средств
+
+При выполнении перевода приложение:
+
+- проверяет существование карт;
+- проверяет владельца;
+- проверяет статус карты;
+- проверяет достаточность средств;
+- выполняет перевод в рамках транзакции;
+- сохраняет информацию об операции.
+
+---
+
+# 📄 Валидация
+
+Используются возможности Spring Validation.
+
+Проверяются:
+
+- корректность входных данных;
+- обязательные поля;
+- размеры строк;
+- номера карт;
+- ограничения бизнес-логики.
+
+---
+
+# ❗ Обработка ошибок
+
+Используется централизованная обработка исключений.
+
+Возвращаются понятные HTTP-ответы:
+
+- 400 Bad Request
+- 401 Unauthorized
+- 403 Forbidden
+- 404 Not Found
+- 409 Conflict
+- 500 Internal Server Error
+
+---
+
+# 🎯 Особенности проекта
+
+✔ JWT Authentication
+
+✔ Role Based Security
+
+✔ REST API
+
+✔ PostgreSQL
+
+✔ Liquibase
+
+✔ Docker
+
+✔ Swagger
+
+✔ AES Encryption
+
+✔ Pagination
+
+✔ DTO Pattern
+
+✔ Layered Architecture
+
+✔ Validation
+
+✔ Exception Handling
