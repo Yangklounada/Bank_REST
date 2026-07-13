@@ -2,20 +2,17 @@ package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.CardRequest;
 import com.example.bankcards.dto.CardResponse;
-import com.example.bankcards.entity.User;
-import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.security.JwtUtils;
+import com.example.bankcards.security.SecurityUtils;
 import com.example.bankcards.security.UserDetailsServiceImpl;
 import com.example.bankcards.service.CardService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.data.web.SpringDataWebAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -23,12 +20,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -48,7 +42,7 @@ class CardControllerTest {
     private CardService cardService;
 
     @MockBean
-    private UserRepository userRepository;
+    private SecurityUtils securityUtils;
 
     @MockBean
     private JwtUtils jwtUtils;
@@ -58,15 +52,6 @@ class CardControllerTest {
 
     @MockBean
     private AuthenticationManager authenticationManager;
-
-    @BeforeEach
-    void setUp() {
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("testuser");
-        lenient().when(userRepository.findByUsername("testuser"))
-                .thenReturn(Optional.of(user));
-    }
 
     @Test
     @WithMockUser(username = "testuser", roles = "USER")
@@ -87,6 +72,7 @@ class CardControllerTest {
                 1L
         );
 
+        when(securityUtils.getCurrentUserId()).thenReturn(1L);
         when(cardService.createCard(any(CardRequest.class), eq(1L)))
                 .thenReturn(response);
 
@@ -112,6 +98,7 @@ class CardControllerTest {
                 1L
         );
 
+        when(securityUtils.getCurrentUserId()).thenReturn(1L);
         when(cardService.getCardById(1L, 1L)).thenReturn(response);
 
         mockMvc.perform(get("/api/cards/1"))
@@ -132,6 +119,7 @@ class CardControllerTest {
                 1L
         );
 
+        when(securityUtils.getCurrentUserId()).thenReturn(1L);
         when(cardService.blockCard(1L, 1L)).thenReturn(response);
 
         mockMvc.perform(patch("/api/cards/1/block")
@@ -143,6 +131,8 @@ class CardControllerTest {
     @Test
     @WithMockUser(username = "testuser", roles = "USER")
     void deleteCard_returns204() throws Exception {
+        when(securityUtils.getCurrentUserId()).thenReturn(1L);
+
         mockMvc.perform(delete("/api/cards/1")
                         .with(csrf()))
                 .andExpect(status().isNoContent());

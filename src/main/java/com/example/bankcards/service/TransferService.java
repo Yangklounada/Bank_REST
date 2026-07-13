@@ -3,35 +3,38 @@ package com.example.bankcards.service;
 import com.example.bankcards.dto.TransferRequest;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
-import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.ResourceNotFoundException;
 import com.example.bankcards.exception.TransferException;
 import com.example.bankcards.repository.CardRepository;
-import com.example.bankcards.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
+/**
+ * Сервисный слой для переводов между картами одного пользователя.
+ * Проверяет статус карт, баланс и владение перед выполнением перевода.
+ */
 @Service
+@Transactional(readOnly = true)
 public class TransferService {
-
     private final CardRepository cardRepository;
-    private final UserRepository userRepository;
 
-    public TransferService(CardRepository cardRepository, UserRepository userRepository) {
+    public TransferService(CardRepository cardRepository) {
         this.cardRepository = cardRepository;
-        this.userRepository = userRepository;
     }
 
+    /**
+     * Выполняет перевод между двумя картами одного пользователя.
+     *
+     * @throws ResourceNotFoundException если карта не найдена или не принадлежит пользователю
+     * @throws TransferException         если валидация не пройдена (та же карта, неактивна, недостаточно средств)
+     */
     @Transactional
-    public void transfer(TransferRequest request, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        Long userId = user.getId();
+    public void transfer(TransferRequest request, Long userId) {
         Card fromCard = cardRepository.findByIdAndOwnerId(request.getFromCardId(), userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Source card not found"));
         Card toCard = cardRepository.findByIdAndOwnerId(request.getToCardId(), userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Destination card not found"));
+
         if (fromCard.getId().equals(toCard.getId())) {
             throw new TransferException("Cannot transfer to the same card");
         }

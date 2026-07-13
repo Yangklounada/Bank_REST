@@ -1,7 +1,18 @@
 databaseChangeLog:
+  - preConditions:
+    - dbms:
+        type: postgresql
+    - runningAs:
+        username: postgres
+
   - changeSet:
       id: v001-create-users-table
       author: developer
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: users
       changes:
         - createTable:
             tableName: users
@@ -40,6 +51,11 @@ databaseChangeLog:
   - changeSet:
       id: v001-create-user-roles-table
       author: developer
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: user_roles
       changes:
         - createTable:
             tableName: user_roles
@@ -60,6 +76,11 @@ databaseChangeLog:
   - changeSet:
       id: v001-create-cards-table
       author: developer
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: cards
       changes:
         - createTable:
             tableName: cards

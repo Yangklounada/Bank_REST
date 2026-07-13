@@ -7,7 +7,6 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.ResourceNotFoundException;
 import com.example.bankcards.exception.TransferException;
 import com.example.bankcards.repository.CardRepository;
-import com.example.bankcards.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,9 +25,6 @@ class TransferServiceTest {
 
     @Mock
     private CardRepository cardRepository;
-
-    @Mock
-    private UserRepository userRepository;
 
     @InjectMocks
     private TransferService transferService;
@@ -58,7 +54,6 @@ class TransferServiceTest {
         Card fromCard = createCard(1L, owner, CardStatus.ACTIVE, BigDecimal.valueOf(500));
         Card toCard = createCard(2L, owner, CardStatus.ACTIVE, BigDecimal.valueOf(100));
 
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(owner));
         when(cardRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(fromCard));
         when(cardRepository.findByIdAndOwnerId(2L, 1L)).thenReturn(Optional.of(toCard));
 
@@ -67,7 +62,7 @@ class TransferServiceTest {
         request.setToCardId(2L);
         request.setAmount(BigDecimal.valueOf(200));
 
-        transferService.transfer(request, "testuser");
+        transferService.transfer(request, 1L);
 
         assertEquals(BigDecimal.valueOf(300), fromCard.getBalance());
         assertEquals(BigDecimal.valueOf(300), toCard.getBalance());
@@ -76,8 +71,6 @@ class TransferServiceTest {
 
     @Test
     void transfer_sourceCardNotFound_throwsException() {
-        User owner = createUser(1L);
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(owner));
         when(cardRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.empty());
 
         TransferRequest request = new TransferRequest();
@@ -86,7 +79,7 @@ class TransferServiceTest {
         request.setAmount(BigDecimal.valueOf(100));
 
         assertThrows(ResourceNotFoundException.class,
-                () -> transferService.transfer(request, "testuser"));
+                () -> transferService.transfer(request, 1L));
     }
 
     @Test
@@ -95,7 +88,6 @@ class TransferServiceTest {
         Card fromCard = createCard(1L, owner, CardStatus.ACTIVE, BigDecimal.valueOf(50));
         Card toCard = createCard(2L, owner, CardStatus.ACTIVE, BigDecimal.valueOf(100));
 
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(owner));
         when(cardRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(fromCard));
         when(cardRepository.findByIdAndOwnerId(2L, 1L)).thenReturn(Optional.of(toCard));
 
@@ -105,7 +97,7 @@ class TransferServiceTest {
         request.setAmount(BigDecimal.valueOf(100));
 
         assertThrows(TransferException.class,
-                () -> transferService.transfer(request, "testuser"));
+                () -> transferService.transfer(request, 1L));
     }
 
     @Test
@@ -114,7 +106,6 @@ class TransferServiceTest {
         Card fromCard = createCard(1L, owner, CardStatus.BLOCKED, BigDecimal.valueOf(500));
         Card toCard = createCard(2L, owner, CardStatus.ACTIVE, BigDecimal.valueOf(100));
 
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(owner));
         when(cardRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(fromCard));
         when(cardRepository.findByIdAndOwnerId(2L, 1L)).thenReturn(Optional.of(toCard));
 
@@ -124,7 +115,7 @@ class TransferServiceTest {
         request.setAmount(BigDecimal.valueOf(100));
 
         assertThrows(TransferException.class,
-                () -> transferService.transfer(request, "testuser"));
+                () -> transferService.transfer(request, 1L));
     }
 
     @Test
@@ -132,7 +123,6 @@ class TransferServiceTest {
         User owner = createUser(1L);
         Card card = createCard(1L, owner, CardStatus.ACTIVE, BigDecimal.valueOf(500));
 
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(owner));
         when(cardRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(card));
 
         TransferRequest request = new TransferRequest();
@@ -141,6 +131,6 @@ class TransferServiceTest {
         request.setAmount(BigDecimal.valueOf(100));
 
         assertThrows(TransferException.class,
-                () -> transferService.transfer(request, "testuser"));
+                () -> transferService.transfer(request, 1L));
     }
 }

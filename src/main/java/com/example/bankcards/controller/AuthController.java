@@ -12,6 +12,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Обрабатывает регистрацию и вход пользователей. Выдаёт JWT-токены после успешной аутентификации.
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -28,6 +31,9 @@ public class AuthController {
         this.jwtUtils = jwtUtils;
     }
 
+    /**
+     * Регистрирует нового пользователя и возвращает JWT-токен.
+     */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         userService.registerUser(request);
@@ -35,6 +41,9 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
+    /**
+     * Аутентифицирует существующего пользователя и возвращает JWT-токен.
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(

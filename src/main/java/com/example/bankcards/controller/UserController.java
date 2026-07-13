@@ -1,13 +1,16 @@
 package com.example.bankcards.controller;
 
-import com.example.bankcards.entity.User;
+import com.example.bankcards.dto.UserResponse;
 import com.example.bankcards.service.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST-контроллер для управления пользователями (только для администратора).
+ * Позволяет просматривать, удалять пользователей и назначать роли администратора.
+ */
 @RestController
 @RequestMapping("/api/admin/users")
 public class UserController {
@@ -18,24 +21,36 @@ public class UserController {
         this.userService = userService;
     }
 
+    /**
+     * Возвращает список всех зарегистрированных пользователей.
+     */
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
+    /**
+     * Возвращает конкретного пользователя по ID.
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserResponseById(id));
     }
 
+    /**
+     * Удаляет пользователя по ID.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Назначает роль ADMIN пользователю по ID.
+     */
     @PatchMapping("/{id}/role")
-    public ResponseEntity<User> assignAdmin(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> assignAdmin(@PathVariable Long id) {
         return ResponseEntity.ok(userService.assignAdminRole(id));
     }
 }

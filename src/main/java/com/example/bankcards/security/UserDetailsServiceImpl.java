@@ -11,6 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.stream.Collectors;
 
+/**
+ * Загружает данные пользователя для аутентификации Spring Security.
+ */
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 

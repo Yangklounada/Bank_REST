@@ -8,6 +8,10 @@ import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
+/**
+ * Настраивает CORS для разрешения кросс-доменных запросов
+ * с любого источника и поддержкой учётных данных (для разработки).
+ */
 @Configuration
 public class CorsConfig {
 

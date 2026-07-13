@@ -7,14 +7,16 @@
 ![JWT](https://img.shields.io/badge/Auth-JWT-red)
 ![Liquibase](https://img.shields.io/badge/Database-Liquibase-yellow)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+![Lombok](https://img.shields.io/badge/Lombok-1.18-important)
+![MapStruct](https://img.shields.io/badge/MapStruct-1.6-yellowgreen)
 
 ---
 
 # 📖 О проекте
 
-**Bank REST API** — серверное приложение для управления банковскими картами и денежными переводами между ними.
+**Bank REST API** — серверное приложение для управления банковскими картами и денежными переводами между собственными картами.
 
-Проект реализован на **Spring Boot** с использованием современной архитектуры REST API, JWT-аутентификации, разграничения ролей пользователей, шифрования конфиденциальных данных и миграций базы данных через Liquibase.
+Проект реализован на **Spring Boot** с использованием современной архитектуры REST API, JWT-аутентификации, разграничения ролей пользователей, шифрования конфиденциальных данных (AES/GCM) и миграций базы данных через Liquibase.
 
 Основной целью проекта является демонстрация построения безопасного банковского backend-приложения с использованием современных технологий Java.
 
@@ -26,12 +28,12 @@
 
 - регистрация
 - авторизация по JWT
-- просмотр своих карт
+- создание банковских карт
+- просмотр своих карт (постранично)
 - просмотр информации о карте
-- просмотр баланса
-- выполнение переводов между картами
-- просмотр истории операций
-- постраничный вывод данных
+- блокировка своей карты
+- удаление своей карты
+- выполнение переводов между своими картами
 - валидация всех входящих запросов
 
 ---
@@ -40,24 +42,20 @@
 
 Помимо возможностей пользователя:
 
-- создание банковских карт
-- блокировка карт
-- разблокировка карт
-- удаление карт
-- управление пользователями
-- просмотр информации обо всех картах
+- просмотр списка всех пользователей
+- просмотр пользователя по ID
+- удаление пользователя
+- назначение роли ADMIN пользователю
 
 ---
 
 # 🔒 Безопасность
 
-В проекте реализованы современные механизмы защиты.
-
 ### JWT Authentication
 
-После успешной авторизации сервер выдает JWT-токен.
+После успешной авторизации сервер выдает JWT-токен (HMAC-SHA256, Base64-ключ).
 
-Каждый защищенный запрос проходит через собственный JWT Filter.
+Каждый защищенный запрос проходит через `JwtAuthenticationFilter`.
 
 ---
 
@@ -65,27 +63,26 @@
 
 Используется:
 
-- SecurityFilterChain
-- AuthenticationManager
-- PasswordEncoder (BCrypt)
-- Role-based authorization
+- `SecurityFilterChain`
+- `AuthenticationManager`
+- `PasswordEncoder` (BCrypt)
+- Role-based authorization (`ROLE_USER`, `ROLE_ADMIN`)
 - Stateless Session Policy
+- CORS (разрешены все источники для разработки)
+- Публичный доступ к Swagger UI и OpenAPI spec
 
 ---
 
-### Шифрование банковских карт
+### Шифрование номеров карт
 
 Номера банковских карт **не хранятся в открытом виде**.
 
-Используется
+Используется:
 
-- AES/GCM
-
-что обеспечивает:
-
-- конфиденциальность данных;
-- защиту от изменения;
-- безопасное хранение номеров карт.
+- **AES/GCM/NoPadding** — шифрование с аутентификацией
+- Случайный IV (12 байт) для каждого шифрования
+- Все данные хранятся в БД в зашифрованном виде
+- При возврате в API номер карты маскируется (**** **** **** 1234)
 
 ---
 
@@ -94,55 +91,37 @@
 Проект построен по классической многослойной архитектуре.
 
 ```
-                REST
+         REST
 
-                 │
-
-          Controller Layer
-
-                 │
-
-           Service Layer
-
-                 │
-
-         Repository Layer
-
-                 │
-
-            PostgreSQL
+           │
+    Controller Layer
+           │
+     Service Layer
+           │
+    Repository Layer
+           │
+      PostgreSQL
 ```
 
-Каждый слой отвечает только за свою область ответственности.
+Каждый слой отвечает только за свою область ответственности. Дополнительно выделены слои мапперов (Entity → DTO) и утилит (шифрование, маскирование).
 
 ---
 
 # 📂 Структура проекта
 
 ```
-src
+src/main/java/com/example/bankcards/
 │
-├── config
-│
-├── controller
-│
-├── dto
-│
-├── entity
-│
-├── exception
-│
-├── mapper
-│
-├── repository
-│
-├── security
-│
-├── service
-│
-├── util
-│
-└── validation
+├── config          # CORS, Swagger/OpenAPI, Security
+├── controller      # REST-контроллеры
+├── dto             # DTO (запросы/ответы)
+├── entity          # JPA-сущности
+├── exception       # Исключения и глобальный обработчик
+├── mapper          # Преобразование Entity → DTO
+├── repository      # Spring Data JPA репозитории
+├── security        # JWT-фильтр, провайдер, утилиты
+├── service         # Бизнес-логика
+└── util            # Шифрование, маскирование карт
 ```
 
 ---
@@ -152,32 +131,33 @@ src
 ## Backend
 
 - Java 17
-- Spring Boot 3
+- Spring Boot 3.2
 - Spring MVC
-- Spring Security
-- Spring Data JPA
-- Hibernate
+- Spring Security 6
+- Spring Data JPA / Hibernate
+- Lombok
+- MapStruct
 
 ---
 
 ## База данных
 
-- PostgreSQL
-- Liquibase
+- PostgreSQL 16
+- Liquibase (с `preConditions`)
 
 ---
 
 ## Документация
 
-- Swagger / OpenAPI
+- Swagger UI / OpenAPI 3
 
 ---
 
 ## Безопасность
 
-- JWT
+- JWT (HMAC-SHA256)
 - BCrypt
-- AES/GCM Encryption
+- AES/GCM/NoPadding
 
 ---
 
@@ -189,69 +169,69 @@ src
 
 ## Контейнеризация
 
-- Docker
-- Docker Compose
+- Docker Compose (PostgreSQL)
 
 ---
 
 # 🗄 База данных
 
-Для управления схемой используется **Liquibase**.
+Для управления схемой используется **Liquibase** с `preConditions`, гарантирующими безопасный повторный запуск.
 
-При запуске приложения автоматически выполняются миграции.
+Миграции автоматически выполняются при старте приложения:
 
-Это обеспечивает:
-
-- создание таблиц;
-- создание ограничений;
-- создание индексов;
-- актуальную структуру БД.
+- создание таблиц `users`, `user_roles`, `cards`
+- создание внешних ключей и индексов
+- проверка условий перед применением (`dbms`, `runningAs`, `not tableExists`)
 
 ---
 
 # 📡 REST API
 
-Основные группы API.
+Все endpoints, кроме аутентификации, требуют JWT-токен в заголовке `Authorization: Bearer <token>`.
 
-## Authentication
+## Authentication (публичные)
 
 ```
-POST /auth/register
-
-POST /auth/login
+POST /api/auth/register
+POST /api/auth/login
 ```
 
 ---
 
-## Cards
+## Cards (требуют аутентификации)
 
 ```
-GET
-
-POST
-
-PUT
-
-DELETE
+GET    /api/cards              — список карт (постранично)
+POST   /api/cards              — создать карту
+GET    /api/cards/{id}         — информация о карте
+PATCH  /api/cards/{id}/block   — заблокировать карту
+DELETE /api/cards/{id}         — удалить карту
 ```
-
-Работа с банковскими картами.
 
 ---
 
-## Transfers
+## Transfers (требуют аутентификации)
 
 ```
-POST /transfer
+POST /api/transfers — перевод между своими картами
 ```
 
-Выполнение денежных переводов между картами.
+---
+
+## Admin (требуют роли ADMIN)
+
+```
+GET    /api/admin/users          — список пользователей
+GET    /api/admin/users/{id}     — пользователь по ID
+DELETE /api/admin/users/{id}     — удалить пользователя
+PATCH  /api/admin/users/{id}/role — назначить ADMIN
+```
 
 ---
 
 # 📑 Swagger
 
-После запуска проекта документация доступна по адресу
+После запуска проекта документация доступна по адресу:
 
 ```
 http://localhost:8080/swagger-ui/index.html
@@ -259,65 +239,54 @@ http://localhost:8080/swagger-ui/index.html
 
 ---
 
-# 🐳 Запуск через Docker
+# 🐳 Запуск через Docker Compose
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-После запуска автоматически поднимется PostgreSQL.
+Запускает PostgreSQL 16 на порту **5432** с БД `bank_cards`.
 
 ---
 
 # ▶️ Локальный запуск
 
-### 1.
-
-Клонировать проект
+### 1. Клонировать проект
 
 ```bash
 git clone <repository>
+cd Bank_REST
 ```
 
-### 2.
+### 2. Запустить PostgreSQL
 
-Запустить PostgreSQL
-
-### 3.
-
-Создать БД
-
-```
-bank_cards
+```bash
+docker compose up -d
 ```
 
-### 4.
+### 3. Настроить переменные окружения (опционально)
 
-Настроить
+Создать `.env` из примера:
 
-```
-application.yml
-```
-
-или
-
-```
-application.properties
+```bash
+cp .env.example .env
 ```
 
-### 5.
+Приложение также работает с fallback-значениями по умолчанию.
 
-Запустить
+### 4. Запустить приложение
+
+```bash
+./mvnw spring-boot:run
+```
+
+Или:
 
 ```bash
 mvn spring-boot:run
 ```
 
-или
-
-```bash
-./mvnw spring-boot:run
-```
+Приложение будет доступно на `http://localhost:8080`.
 
 ---
 
@@ -325,68 +294,49 @@ mvn spring-boot:run
 
 При выполнении перевода приложение:
 
-- проверяет существование карт;
-- проверяет владельца;
-- проверяет статус карты;
-- проверяет достаточность средств;
-- выполняет перевод в рамках транзакции;
-- сохраняет информацию об операции.
-
----
-
-# 📄 Валидация
-
-Используются возможности Spring Validation.
-
-Проверяются:
-
-- корректность входных данных;
-- обязательные поля;
-- размеры строк;
-- номера карт;
-- ограничения бизнес-логики.
+- проверяет существование обеих карт
+- проверяет, что карты принадлежат текущему пользователю
+- проверяет статус карт (обе должны быть `ACTIVE`)
+- проверяет, что карты разные (нельзя перевести самому себе)
+- проверяет достаточность средств на карте отправителя
+- выполняет перевод в рамках одной транзакции (`@Transactional`)
 
 ---
 
 # ❗ Обработка ошибок
 
-Используется централизованная обработка исключений.
+Используется централизованный обработчик исключений (`@RestControllerAdvice`).
 
-Возвращаются понятные HTTP-ответы:
+Иерархия исключений:
 
-- 400 Bad Request
-- 401 Unauthorized
-- 403 Forbidden
-- 404 Not Found
-- 409 Conflict
-- 500 Internal Server Error
+- `ApiException` (абстрактный базовый класс с HTTP-статусом)
+  - `ResourceNotFoundException` → **404**
+  - `DuplicateResourceException` → **409**
+  - `TransferException` → **400**
+
+Дополнительно обрабатываются:
+
+- `MethodArgumentNotValidException` → **400** (детали по каждому полю)
+- `Exception` → **500** (непредвиденные ошибки)
 
 ---
 
 # 🎯 Особенности проекта
 
-✔ JWT Authentication
-
-✔ Role Based Security
-
-✔ REST API
-
-✔ PostgreSQL
-
-✔ Liquibase
-
-✔ Docker
-
-✔ Swagger
-
-✔ AES Encryption
-
-✔ Pagination
-
-✔ DTO Pattern
-
-✔ Layered Architecture
-
-✔ Validation
-
-✔ Exception Handling
+✔ JWT Authentication  
+✔ Role Based Security  
+✔ REST API  
+✔ PostgreSQL  
+✔ Liquibase (preConditions)  
+✔ Docker Compose  
+✔ Swagger / OpenAPI  
+✔ AES/GCM Encryption  
+✔ Pagination  
+✔ DTO Pattern (Lombok)  
+✔ Mapper Layer (MapStruct)  
+✔ Layered Architecture  
+✔ Validation  
+✔ Centralized Exception Handling  
+✔ SecurityUtils (текущий пользователь)  
+✔ Secrets через env-переменные  
+✔ Маскирование номеров карт  

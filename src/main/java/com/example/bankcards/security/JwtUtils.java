@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
+/**
+ * Утилита для генерации, разбора и проверки JWT-токенов.
+ * Использует HMAC-SHA256 с секретным ключом в Base64.
+ */
 @Component
 public class JwtUtils {
 
@@ -21,6 +25,9 @@ public class JwtUtils {
         this.expirationMs = expirationMs;
     }
 
+    /**
+     * Генерирует JWT-токен с указанным именем пользователя в качестве subject.
+     */
     public String generateToken(String username) {
         return Jwts.builder()
                 .subject(username)
@@ -30,6 +37,9 @@ public class JwtUtils {
                 .compact();
     }
 
+    /**
+     * Извлекает имя пользователя (subject) из JWT-токена.
+     */
     public String getUsernameFromToken(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
@@ -39,6 +49,9 @@ public class JwtUtils {
                 .getSubject();
     }
 
+    /**
+     * Проверяет подпись и срок действия JWT-токена.
+     */
     public boolean validateToken(String token) {
         try {
             Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);

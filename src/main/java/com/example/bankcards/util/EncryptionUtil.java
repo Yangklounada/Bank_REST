@@ -1,43 +1,40 @@
 package com.example.bankcards.util;
 
-import com.fasterxml.jackson.databind.ser.Serializers;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-
 import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
+/**
+ * Утилита для шифрования и дешифрования конфиденциальных данных алгоритмом AES/GCM/NoPadding.
+ * Первые 12 байт зашифрованных данных содержат IV; остальное — зашифрованная полезная нагрузка.
+ */
 @Component
 public class EncryptionUtil {
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
 
-    @Value("${app.encryption.secret}")
-    private String secret;
+    private final SecretKey secretKey;
 
-    private SecretKey secretKey;
-
-    @PostConstruct
-    public void init() {
+    public EncryptionUtil(@Value("${app.encryption.secret}") String secret) {
         byte[] keyBytes = secret.getBytes();
         if (keyBytes.length < 16) {
-            throw new IllegalArgumentException("Key must be at least 16 bytes");
+            throw new IllegalArgumentException("Encryption key must be at least 16 bytes, got " + keyBytes.length);
         }
-        byte[] asKey = new byte[16];
-        System.arraycopy(keyBytes, 0, asKey, 0, Math.min(keyBytes.length, 16));
-        this.secretKey = new SecretKeySpec(asKey, "AES");
+        byte[] rawKey = new byte[16];
+        System.arraycopy(keyBytes, 0, rawKey, 0, 16);
+        this.secretKey = new SecretKeySpec(rawKey, "AES");
     }
 
+    /**
+     * Шифрует текст алгоритмом AES/GCM/NoPadding. IV добавляется перед зашифрованными данными.
+     */
     public String encrypt(String plainText) {
         try {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
@@ -54,6 +51,9 @@ public class EncryptionUtil {
             throw new RuntimeException("Encryption failed", e);
         }
     }
+    /**
+     * Дешифрует Base64-закодированный зашифрованный текст, содержащий IV в начале.
+     */
     public String decrypt(String cipherText) {
         try {
             byte[] decoded = Base64.getDecoder().decode(cipherText);

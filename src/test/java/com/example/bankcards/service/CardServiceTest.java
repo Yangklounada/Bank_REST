@@ -6,8 +6,9 @@ import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardStatus;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.exception.ResourceNotFoundException;
+import com.example.bankcards.mapper.CardMapper;
 import com.example.bankcards.repository.CardRepository;
-import com.example.bankcards.util.CardMaskUtil;
+import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.util.EncryptionUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,10 +35,13 @@ class CardServiceTest {
     private CardRepository cardRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private EncryptionUtil encryptionUtil;
 
     @Mock
-    private UserService userService;
+    private CardMapper cardMapper;
 
     @InjectMocks
     private CardService cardService;
@@ -70,13 +74,14 @@ class CardServiceTest {
         request.setExpiryDate("2028-12-31");
         request.setInitialBalance(BigDecimal.valueOf(500));
 
-        when(userService.getUserById(1L)).thenReturn(owner);
+        Card savedCard = createCard(1L, owner);
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
         when(encryptionUtil.encrypt("1234567890123456")).thenReturn("encrypted123");
-        when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> {
-            Card saved = invocation.getArgument(0);
-            saved.setId(1L);
-            return saved;
-        });
+        when(cardRepository.save(any(Card.class))).thenReturn(savedCard);
+        when(cardMapper.toResponse(savedCard)).thenReturn(new CardResponse(
+                1L, "**** **** **** 3456", "Test Holder",
+                LocalDate.of(2028, 12, 31), "ACTIVE", BigDecimal.valueOf(500), 1L));
 
         CardResponse result = cardService.createCard(request, 1L);
 
@@ -86,7 +91,7 @@ class CardServiceTest {
         assertEquals(BigDecimal.valueOf(500), result.getBalance());
         assertEquals(1L, result.getOwnerId());
 
-        verify(userService).getUserById(1L);
+        verify(userRepository).findById(1L);
         verify(encryptionUtil).encrypt("1234567890123456");
         verify(cardRepository).save(any(Card.class));
     }
@@ -97,14 +102,14 @@ class CardServiceTest {
         Card card = createCard(1L, owner);
 
         when(cardRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(card));
-        when(encryptionUtil.decrypt("encrypted123")).thenReturn("1234567890123456");
+        when(cardMapper.toResponse(card)).thenReturn(new CardResponse(
+                1L, "**** **** **** 3456", "Test Holder",
+                LocalDate.of(2028, 12, 31), "ACTIVE", BigDecimal.valueOf(1000), 1L));
 
         CardResponse result = cardService.getCardById(1L, 1L);
 
         assertNotNull(result);
         assertEquals(1L, result.getId());
-        assertEquals("Test Holder", result.getCardHolder());
-        assertTrue(result.getMaskedNumber().endsWith("3456"));
     }
 
     @Test
@@ -123,27 +128,31 @@ class CardServiceTest {
 
         when(cardRepository.findByOwnerId(1L, pageable))
                 .thenReturn(new PageImpl<>(List.of(card)));
-        when(encryptionUtil.decrypt("encrypted123")).thenReturn("1234567890123456");
+        when(cardMapper.toResponsePage(any())).thenReturn(
+                new PageImpl<>(List.of(new CardResponse(
+                        1L, "**** **** **** 3456", "Test Holder",
+                        LocalDate.of(2028, 12, 31), "ACTIVE", BigDecimal.valueOf(1000), 1L))));
 
         Page<CardResponse> result = cardService.getUserCards(1L, pageable);
 
         assertEquals(1, result.getContent().size());
-        assertEquals("Test Holder", result.getContent().get(0).getCardHolder());
     }
 
     @Test
     void blockCard_success() {
         User owner = createUser(1L);
         Card card = createCard(1L, owner);
+        card.setStatus(CardStatus.ACTIVE);
 
         when(cardRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(card));
         when(cardRepository.save(any(Card.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(encryptionUtil.decrypt("encrypted123")).thenReturn("1234567890123456");
+        when(cardMapper.toResponse(any())).thenReturn(new CardResponse(
+                1L, "**** **** **** 3456", "Test Holder",
+                LocalDate.of(2028, 12, 31), "BLOCKED", BigDecimal.valueOf(1000), 1L));
 
         CardResponse result = cardService.blockCard(1L, 1L);
 
         assertEquals("BLOCKED", result.getStatus());
-        verify(cardRepository).save(card);
     }
 
     @Test

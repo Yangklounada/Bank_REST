@@ -1,10 +1,23 @@
 package com.example.bankcards.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
+/**
+ * DTO запроса для перевода средств между двумя картами.
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransferRequest {
+
     @NotNull
     private Long fromCardId;
 
@@ -14,38 +27,4 @@ public class TransferRequest {
     @NotNull
     @DecimalMin(value = "0.01")
     private BigDecimal amount;
-
-    public TransferRequest(Long fromCardId, Long toCardId, BigDecimal amount) {
-        this.fromCardId = fromCardId;
-        this.toCardId = toCardId;
-        this.amount = amount;
-    }
-
-    public TransferRequest() {
-
-    }
-
-    public Long getFromCardId() {
-        return fromCardId;
-    }
-
-    public Long getToCardId() {
-        return toCardId;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setFromCardId(Long fromCardId) {
-        this.fromCardId = fromCardId;
-    }
-
-    public void setToCardId(Long toCardId) {
-        this.toCardId = toCardId;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
 }
